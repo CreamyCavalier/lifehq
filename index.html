@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Life HQ</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Life HQ">
+<meta name="theme-color" content="#0D0D0D">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;900&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#FFFFFF; --fg:#0D0D0D; --muted:#5E5E5E; --rule:#0D0D0D; --hair:#DCDCDC;
+  --bar:#0D0D0D; --bar-fg:#FFFFFF; --soft:#F2F2F2;
+  --f:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0B0B0B; --fg:#F2F2F2; --muted:#A3A3A3; --rule:#F2F2F2; --hair:#2E2E2E;
+  --bar:#F2F2F2; --bar-fg:#0B0B0B; --soft:#1A1A1A; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);font-size:16px;line-height:1.35;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bar)}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.mast{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);color:var(--bar-fg);
+  padding:18px max(20px,env(safe-area-inset-right,0px)) 12px max(20px,env(safe-area-inset-left,0px));
+  display:flex;justify-content:space-between;align-items:flex-end}
+.mast b{font-weight:900;font-size:15px;line-height:1.15}
+.mast span{font-size:13px;font-weight:500;text-align:right;line-height:1.25}
+main{flex:1;padding:22px max(20px,env(safe-area-inset-right,0px)) 130px max(20px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:30px}
+section{display:flex;flex-direction:column;gap:30px}
+.row{display:grid;grid-template-columns:96px minmax(0,1fr);column-gap:16px;border-top:2px solid var(--rule);padding-top:16px}
+.row>.lab{font-size:13px;font-weight:500}
+.row>.lab .n{display:block;font-size:32px;font-weight:900;line-height:1.05}
+.big{font-size:clamp(72px,24vw,96px);font-weight:900;line-height:.85;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.lead{font-size:20px;font-weight:700;line-height:1.3}
+.list{display:flex;flex-direction:column;gap:6px;min-width:0}
+.item{display:flex;gap:12px;align-items:flex-start;padding:4px 0;font-size:17px;line-height:1.35}
+.item input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--fg);flex:none}
+.item .meta{margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap;padding-top:3px}
+.done{text-decoration:line-through;color:var(--muted)}
+.muted{color:var(--muted)} .small{font-size:13px}
+.times{display:grid;grid-template-columns:52px minmax(0,1fr);row-gap:12px;column-gap:8px;font-size:17px;font-variant-numeric:tabular-nums}
+.times b{font-weight:700}
+a{color:var(--fg)}
+button{font:600 15px var(--f);color:var(--fg);background:var(--bg);border:2px solid var(--rule);border-radius:0;padding:10px 14px;cursor:pointer}
+button.solid{background:var(--fg);color:var(--bg)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+input[type=text],input[type=number],input[type=password],input[type=datetime-local],textarea{font:16px var(--f);color:var(--fg);background:var(--bg);border:2px solid var(--rule);border-radius:0;padding:10px 12px;min-width:0}
+details.brief{border:2px solid var(--rule)}
+details.brief summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:700;display:flex;justify-content:space-between}
+details.brief summary::-webkit-details-marker{display:none}
+details.brief summary::after{content:"+";font-weight:900}
+details.brief[open] summary::after{content:"−"}
+.brief-body{padding:4px 14px 16px;white-space:pre-wrap;font-size:16px;line-height:1.45}
+.note{font-size:14px;color:var(--muted);border:1px dashed var(--hair);padding:8px 10px}
+.err{font-size:14px;border-left:4px solid var(--fg);padding:6px 10px;background:var(--soft)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:2px solid var(--rule);
+  padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabs button{border:0;border-top:4px solid transparent;margin-top:-2px;background:transparent;padding:14px 0;font-weight:500;color:var(--muted)}
+.tabs button[aria-selected="true"]{border-top-color:var(--fg);color:var(--fg);font-weight:700}
+.overlay{position:fixed;inset:0;z-index:20;background:var(--bar);color:var(--bar-fg);overflow:auto;
+  padding:calc(28px + env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.overlay .in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.overlay h1{font-size:40px;font-weight:900;letter-spacing:-.03em;line-height:1;margin:0;text-wrap:balance}
+.overlay .text{white-space:pre-wrap;font-size:18px;line-height:1.5}
+.overlay button{background:var(--bar-fg);color:var(--bar);border-color:var(--bar-fg);align-self:flex-start;padding:14px 22px;font-size:17px}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;white-space:pre-wrap;padding:10px 12px;font-size:16px;line-height:1.45}
+.msg.me{align-self:flex-end;background:var(--fg);color:var(--bg)}
+.msg.ai{align-self:flex-start;border:2px solid var(--rule)}
+.chip{align-self:flex-start;font-size:13px;color:var(--muted);border:1px solid var(--hair);padding:3px 8px}
+.composer{position:fixed;left:0;right:0;bottom:calc(52px + max(14px,env(safe-area-inset-bottom,0px)));z-index:6;background:var(--bg);border-top:1px solid var(--hair)}
+.composer .in{max-width:560px;margin:0 auto;display:flex;gap:8px;padding:10px max(20px,env(safe-area-inset-right,0px)) 10px max(20px,env(safe-area-inset-left,0px))}
+.composer textarea{flex:1;resize:none;height:46px}
+.suggest{display:flex;flex-wrap:wrap;gap:8px}
+.suggest button{font-weight:500;font-size:14px;padding:8px 10px;border-width:1px}
+.sr{position:absolute;left:-9999px}
+.gate{display:flex;flex-direction:column;gap:16px;padding-top:12px}
+.gate h2{font-size:28px;font-weight:900;margin:0;letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="mast"><b id="m-date">—<br>—</b><span id="m-count">Life HQ</span></header>
+  <main id="main">
+    <section id="v-gate" hidden></section>
+    <section id="v-today" aria-label="Today"></section>
+    <section id="v-week" aria-label="Week" hidden></section>
+    <section id="v-chat" aria-label="Chat" hidden></section>
+    <section id="v-todo" aria-label="To-do" hidden></section>
+  </main>
+</div>
+<div class="composer" id="composer" hidden><div class="in">
+  <label for="chat-in" class="sr">Message</label>
+  <textarea id="chat-in" placeholder="Ask anything"></textarea>
+  <button class="solid" id="chat-send">Send</button>
+</div></div>
+<nav class="tabs" id="tabs"><div class="in" role="tablist">
+  <button role="tab" id="t-today" aria-selected="true">Today</button>
+  <button role="tab" id="t-week" aria-selected="false">Week</button>
+  <button role="tab" id="t-chat" aria-selected="false">Chat</button>
+  <button role="tab" id="t-todo" aria-selected="false">To-do</button>
+</div></nav>
+<div class="overlay" id="overlay" hidden></div>
+
+<script>
+(function(){
+"use strict";
+// ================= config =================
+const CLIENT_ID = "797832128341-b0f131prlbal93v73pu0gidcqoinb5u3.apps.googleusercontent.com";            // Google OAuth client id (not secret)
+const CAL_CLASSES = "primary";
+const CAL_ASSIGN  = "4p8hgue4j0cdpobmoo3f3sd542huf70f@import.calendar.google.com";
+const AUDITION = "2026-11-14";
+const READER = "https://claude.ai/artifact/ThEjaprnmHNKL7Wtj4HXfr";
+const LEAVE_MIN = 25;
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.compose",
+  "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file"
+].join(" ");
+const INBOX_NAME = "Life HQ inbox";               // Google Doc the app writes; Claude reads it
+const SYNC_PREFIX = "lifehq-sync-";               // JSON files Claude writes; app reads newest
+
+// ================= helpers =================
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const addDays = (s, n) => { const d = new Date(s+"T12:00:00"); d.setDate(d.getDate()+n); return ymd(d); };
+const dayDiff = (a, b) => Math.round((new Date(b+"T12:00:00") - new Date(a+"T12:00:00"))/86400000);
+const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const dowOf = s => DOW[new Date(s+"T12:00:00").getDay()];
+const fmtTime = d => { const h = d.getHours(), m = d.getMinutes(); return `${((h+11)%12)+1}:${pad(m)}`; };
+const store = { get(k,d){ try{ const v = localStorage.getItem("lhq-"+k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+                set(k,v){ try{ localStorage.setItem("lhq-"+k, JSON.stringify(v)); }catch(e){} } };
+const short = name => String(name||"")
+  .replace(/^Mathematical Reasoning, Logic, and Statistics.*$/i,"Math")
+  .replace(/^AP French.*$/i,"AP French").replace(/^AP English.*$/i,"AP English Lit")
+  .replace(/^Honors Jazz Ensemble.*$/i,"Jazz Ensemble").replace(/^Psychology in Film.*$/i,"Psych in Film")
+  .replace(/^Living Well.*$/i,"Living Well").replace(/^US Academic Advisory.*$/i,"Advisory")
+  .replace(/\s+-\s+\d+\s*\(.*$/,"").trim();
+const clean = s => { const t = document.createElement("textarea"); t.innerHTML = String(s||""); return t.value.replace(/ /g," ").trim(); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const today = ymd(new Date());
+const daysLeft = dayDiff(today, AUDITION);
+const whenLabel = at => { const d = new Date(at); if (isNaN(d)) return ""; const ds = ymd(d); const day = ds === today ? "Today" : ds === addDays(today,1) ? "Tomorrow" : DOW[d.getDay()].slice(0,3)+" "+d.getDate(); return `${day} ${fmtTime(d)}${d.getHours()<12?"am":"pm"}`; };
+
+function plan(d){
+  const alt = new Date(d+"T12:00:00").getDate() % 2 === 0 ? "Improvise over Althea's changes, 20 min" : "Ear training: sing a 3–4 note phrase, find it on guitar, 20 min";
+  if (d > AUDITION) return { phase:"After the audition", tasks:["Free practice, whatever you enjoy","15 min reading to keep it going"] };
+  if (d === AUDITION) return { phase:"Audition day", tasks:["Warm up slowly, 20 min","Run the opening and the solo once each, no more"] };
+  if (d <= "2026-10-28") return { phase:"Learn Althea", tasks:["Althea: confirm the cut, map it bar by bar, learn the intro riff and verse/chorus, 45 min","Sight-reading: Name the note on G, B, high E (10 min), then Read a line, basic rhythms at 45 bpm (15 min)", alt] };
+  if (d <= "2026-11-02"){
+    const sec = {"2026-10-29":"the bridge","2026-10-30":"the solo","2026-10-31":"the solo, slower","2026-11-01":"the outro, and finish the backing track","2026-11-02":"the weakest section so far"}[d];
+    const read = d <= "2026-10-30" ? "Sight-reading: top three strings, 45–50 bpm, 25 min" : "Sight-reading: from the D string up, add eighth notes, 55 bpm, 25 min";
+    return { phase:"Learn Althea", tasks:[`Althea: ${sec}, slow to tempo, 45 min`, read, alt] };
+  }
+  if (d <= "2026-11-04") return { phase:"First full runs", tasks:["Althea: two full run-throughs with the backing track, 40 min","Draft interview answers: why Berklee, goals, influences, 20 min","Sight-reading: D string up with eighths, 55 bpm, 25 min"] };
+  if (d <= "2026-11-10") return { phase:"Performance mode", tasks:["Althea: one recorded full run, then fix the worst moment, 45 min"+(d==="2026-11-07"?" (mock audition in front of someone today)":""),"Sight-reading: all six strings, 60+ bpm, plus one cold read, 25 min", alt] };
+  return { phase:"Taper", tasks:[d==="2026-11-13"?"One light run, then an early night":"Althea: 1–2 full runs, no new material", d==="2026-11-11"?"Change strings today so they settle":"Check gear, cables and a backup of the backing track","Sight-reading: 10 min light review"] };
+}
+
+// ================= state =================
+const S = { classes:null, classErr:null, assign:null, assignErr:null, mail:null, mailErr:null, sync:null, syncErr:null,
+  inbox: store.get("inbox", { items: [] }), chat: store.get("chat", []), busy:false };
+let token = store.get("token", null);
+
+// ================= Google auth =================
+let tokenClient = null, authWaiters = [];
+function tokenValid(){ return token && token.access_token && token.expires_at > Date.now() + 60000; }
+function initAuth(){
+  if (tokenClient || !window.google || !google.accounts || !google.accounts.oauth2) return !!tokenClient;
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: r => {
+    if (r && r.access_token){ token = { access_token:r.access_token, expires_at: Date.now() + (r.expires_in||3600)*1000 }; store.set("token", token); store.set("authed", true); }
+    const w = authWaiters; authWaiters = []; w.forEach(f => f(!!(r && r.access_token)));
+  }, error_callback: () => { const w = authWaiters; authWaiters = []; w.forEach(f => f(false)); } });
+  return true;
+}
+function signIn(silent){
+  return new Promise(res => { if (!initAuth()) return res(false); authWaiters.push(res); tokenClient.requestAccessToken({ prompt: silent ? "" : (store.get("authed",false) ? "" : "consent") }); });
+}
+async function g(url, opts={}){
+  if (!tokenValid()) throw { code:"auth" };
+  const r = await fetch(url, Object.assign({}, opts, { headers: Object.assign({ Authorization: "Bearer " + token.access_token }, opts.headers||{}) }));
+  if (r.status === 401) { token = null; store.set("token", null); throw { code:"auth" }; }
+  if (!r.ok) { let m = ""; try { m = (await r.json()).error.message; } catch(e){} throw { code:"http", status:r.status, message:m }; }
+  const ct = r.headers.get("content-type") || "";
+  return ct.includes("json") ? r.json() : r.text();
+}
+const errCopy = (e, what) => e && e.code === "auth" ? `Sign in again to load ${what}.` : e && e.status === 403 ? `Google refused access to ${what}${e.message?": "+e.message:""}.` : `Couldn't load ${what} just now.`;
+
+// ================= data =================
+const CAL = "https://www.googleapis.com/calendar/v3";
+async function listEvents(cal, start, end){
+  const q = new URLSearchParams({ timeMin:new Date(start+"T00:00:00").toISOString(), timeMax:new Date(end+"T00:00:00").toISOString(), singleEvents:"true", orderBy:"startTime", maxResults:"250" });
+  const r = await g(`${CAL}/calendars/${encodeURIComponent(cal)}/events?${q}`); return r.items || [];
+}
+async function loadClasses(){
+  try { S.classes = (await listEvents(CAL_CLASSES, addDays(today,-1), addDays(today,8)))
+      .filter(e => e.start && e.start.dateTime && e.status !== "cancelled")
+      .map(e => ({ id:e.id, name:short(e.summary), full:e.summary||"", room:(e.location||"").split(" - ")[0], start:new Date(e.start.dateTime), date:ymd(new Date(e.start.dateTime)) }));
+    S.classErr = null; } catch(e){ S.classErr = e; }
+}
+async function loadAssign(){
+  try { S.assign = (await listEvents(CAL_ASSIGN, addDays(today,-60), addDays(today,15))).map(e => {
+      const st = String((e.start && (e.start.date || e.start.dateTime)) || "").slice(0,10);
+      const en = String((e.end && (e.end.date || e.end.dateTime)) || "").slice(0,10);
+      const due = en ? addDays(en,-1) : st;
+      const sum = clean(e.summary); const i = sum.indexOf(": ");
+      let cls = i > 0 ? sum.slice(0,i) : "", title = i > 0 ? sum.slice(i+2) : sum;
+      if (/click here to view/i.test(title) && e.description) title = clean(e.description).slice(0,90);
+      return { id:e.id, cls:short(cls), clsFull:cls, title, due, long: dayDiff(st, en) > 30 };
+    }).filter(a => a.due); S.assignErr = null; } catch(e){ S.assignErr = e; }
+}
+const GM = "https://gmail.googleapis.com/gmail/v1/users/me";
+async function gmailSearch(q, n){
+  const r = await g(`${GM}/threads?${new URLSearchParams({ q, maxResults:String(n) })}`);
+  const th = (r.threads || []).slice(0, n);
+  return Promise.all(th.map(async t => {
+    const d = await g(`${GM}/threads/${t.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=To&metadataHeaders=Date`);
+    const m = (d.messages||[])[0] || {}; const H = n => ((m.payload&&m.payload.headers)||[]).find(h => h.name === n)?.value || "";
+    return { id:t.id, from:H("From"), subject:clean(H("Subject"))||"(no subject)", to:H("To"), date:H("Date"), snippet:clean(m.snippet||d.snippet||""), url:`https://mail.google.com/mail/u/0/#inbox/${t.id}` };
+  }));
+}
+async function loadMail(){
+  try { const all = await gmailSearch("in:inbox newer_than:3d -category:promotions -category:social -category:forums", 15);
+    S.mail = all.filter(m => /@sssas\.org>?$|myschoolapp\.com>?$/i.test(m.from) && !/usstudents|usemployees|allstudents/i.test(m.to) && (m.to.match(/@/g)||[]).length <= 6).slice(0,5);
+    S.mailErr = null; } catch(e){ S.mailErr = e; }
+}
+const DRV = "https://www.googleapis.com/drive/v3";
+async function loadSync(){
+  try {
+    const r = await g(`${DRV}/files?${new URLSearchParams({ q:`name contains '${SYNC_PREFIX}' and trashed = false`, orderBy:"createdTime desc", pageSize:"1", fields:"files(id,name,createdTime)" })}`);
+    const f = (r.files||[])[0];
+    if (!f) { S.sync = null; S.syncErr = null; return; }
+    const txt = await g(`${DRV}/files/${f.id}?alt=media`);
+    S.sync = typeof txt === "string" ? JSON.parse(txt) : txt; S.sync._file = f; S.syncErr = null;
+    // drop inbox items Claude has already processed
+    const done = new Set(S.sync.processedInbox || []);
+    const before = S.inbox.items.length; S.inbox.items = S.inbox.items.filter(it => !done.has(it.id));
+    if (S.inbox.items.length !== before) { store.set("inbox", S.inbox); }
+  } catch(e){ S.syncErr = e; }
+}
+// inbox: a Google Doc this app owns; Claude reads it at each brief
+let inboxTimer = null;
+function queue(item){ item.id = item.id || uid(); item.at = new Date().toISOString(); S.inbox.items.push(item); store.set("inbox", S.inbox); clearTimeout(inboxTimer); inboxTimer = setTimeout(pushInbox, 1500); renderAll(); }
+async function pushInbox(){
+  if (!tokenValid()) return;
+  const body = "LIFE HQ INBOX (written by the Life HQ home-screen app). JSON:\n" + JSON.stringify({ updated:new Date().toISOString(), items:S.inbox.items });
+  const meta = { name: INBOX_NAME, mimeType: "application/vnd.google-apps.document" };
+  const boundary = "lhq" + uid();
+  const multipart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${body}\r\n--${boundary}--`;
+  try {
+    let id = store.get("inboxId", null);
+    if (id) await g(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`, { method:"PATCH", headers:{ "Content-Type":`multipart/related; boundary=${boundary}` }, body:multipart });
+    else { const r = await g(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`, { method:"POST", headers:{ "Content-Type":`multipart/related; boundary=${boundary}` }, body:multipart }); store.set("inboxId", r.id); }
+    store.set("inboxPushed", Date.now());
+  } catch(e){ if (e && e.status === 404) { store.set("inboxId", null); } }
+}
+
+// ================= merged views =================
+const dueOn = d => (S.assign||[]).filter(a => !a.long && a.due === d);
+function doneMap(){ const m = Object.assign({}, (S.sync && S.sync.done) || {}); S.inbox.items.forEach(it => { if (it.type === "assignmentDone") { if (it.value) m[it.ref] = true; else delete m[it.ref]; } }); return m; }
+function practiceMap(){ const p = Object.assign({}, (S.sync && S.sync.practice) || {}); S.inbox.items.forEach(it => { if (it.type === "practice") p[it.date] = { minutes: it.minutes }; }); return p; }
+function todos(){
+  const list = ((S.sync && S.sync.todos) || []).map(t => Object.assign({}, t));
+  S.inbox.items.forEach(it => {
+    if (it.type === "todo" || it.type === "reminder") list.push({ id:it.id, text:it.text, when:it.when||"", dueAt:it.dueAt||"", reminder:it.type==="reminder", done:false, pending:true });
+    if (it.type === "todoDone") { const t = list.find(x => x.id === it.ref); if (t) t.done = !!it.value; }
+  });
+  return list;
+}
+
+// ================= render: Today =================
+function nextUp(){
+  const now = new Date(), todays = (S.classes||[]).filter(c => c.date === today);
+  const first = todays[0];
+  if (first && now < first.start) return { kind:"leave", leave:new Date(first.start - LEAVE_MIN*60000), cls:first };
+  const nxt = todays.find(c => c.start > now);
+  return nxt ? { kind:"class", cls:nxt } : { kind:"evening" };
+}
+const dueForClass = c => dueOn(today).filter(a => a.clsFull && c.full && c.full.toLowerCase().startsWith(a.clsFull.toLowerCase().slice(0,18)));
+function composeBrief(){
+  const L = [], todays = (S.classes||[]).filter(c => c.date === today), due = dueOn(today), p = plan(today);
+  if (todays.length){ const f = todays[0]; L.push(`Leave by ${fmtTime(new Date(f.start - LEAVE_MIN*60000))}. First class: ${f.name} at ${fmtTime(f.start)}, room ${f.room}.`); } else L.push("No classes on the calendar today.");
+  if (due.length) L.push(`\nDue today (${due.length}):\n` + due.map(a => `– ${a.title} (${a.cls})`).join("\n"));
+  const tm = dueOn(addDays(today,1)); if (tm.length) L.push(`\nDue tomorrow:\n` + tm.map(a => `– ${a.title} (${a.cls})`).join("\n"));
+  if (daysLeft >= 0) L.push(`\n${daysLeft} days to Berklee · ${p.phase}\n` + p.tasks.map(t => "– "+t).join("\n"));
+  return L.join("\n");
+}
+const syncBrief = k => (S.sync && S.sync.date === today && S.sync[k]) || "";
+function streakText(){
+  const P = practiceMap(); let n = 0, d = today; if (!P[d]) d = addDays(d,-1);
+  while (P[d] && +P[d].minutes > 0){ n++; d = addDays(d,-1); }
+  const week = Object.entries(P).filter(([k]) => dayDiff(k,today) < 7 && dayDiff(k,today) >= 0).reduce((s,[,v]) => s + (+v.minutes||0), 0);
+  return `${n}-day streak · ${week} min this week`;
+}
+function renderToday(){
+  const v = $("v-today"), p = plan(today), n = nextUp(), due = dueOn(today), tm = dueOn(addDays(today,1)), D = doneMap();
+  const morning = syncBrief("morning"), review = syncBrief("review"), late = new Date().getHours() >= 21;
+  let h = `<details class="brief"><summary>Morning brief</summary><div class="brief-body">${esc(morning || composeBrief())}</div></details>`;
+  if (review) h += `<details class="brief" ${late?"open":""}><summary>Today's review</summary><div class="brief-body">${esc(review)}</div></details>`;
+  if (n.kind === "leave") h += `<div class="row"><span class="lab">Leave<br>by</span><span class="big">${fmtTime(n.leave)}</span></div>
+      <div class="row"><span class="lab">Next</span><span class="lead">${esc(n.cls.name)} ${fmtTime(n.cls.start)}<br>Room ${esc(n.cls.room)}${dueForClass(n.cls).map(a=>`<br>Hand in ${esc(a.title)}`).join("")}</span></div>`;
+  else if (n.kind === "class") h += `<div class="row"><span class="lab">Next</span><span><span class="big">${fmtTime(n.cls.start)}</span><span class="lead" style="display:block;margin-top:8px">${esc(n.cls.name)} · room ${esc(n.cls.room)}${dueForClass(n.cls).map(a=>`<br>Hand in ${esc(a.title)}`).join("")}</span></span></div>`;
+  else h += `<div class="row"><span class="lab">Tonight</span><span class="lead">Classes are done.<br>${S.assign ? (tm.length ? `${tm.length} due tomorrow, then practice.` : "Nothing due tomorrow: practice time.") : "Practice time."}</span></div>`;
+  const ditem = a => `<label class="item"><input type="checkbox" data-done="${esc(a.id)}" ${D[a.id]?"checked":""}><span class="${D[a.id]?"done":""}">${esc(a.title)}</span><span class="meta">${esc(a.cls)}</span></label>`;
+  h += `<div class="row"><span class="lab">Due today<span class="n">${S.assign?due.length:"–"}</span></span><div class="list">`;
+  h += S.assignErr ? `<span class="err">${esc(errCopy(S.assignErr,"assignments"))}</span>` : !S.assign ? `<span class="muted">Loading…</span>` : !due.length ? `<span class="muted">Nothing due today.</span>` : "";
+  h += due.map(ditem).join("");
+  if (tm.length) h += `<span class="small muted" style="margin-top:6px">Tomorrow</span>` + tm.map(ditem).join("");
+  h += `</div></div>`;
+  const todays = (S.classes||[]).filter(c => c.date === today);
+  h += `<div class="row"><span class="lab">Schedule</span>${S.classes ? (todays.length ? `<div class="times">${todays.map(c=>`<b>${fmtTime(c.start)}</b><span>${esc(c.name)}${c.room?` <span class="muted">· ${esc(c.room)}</span>`:""}</span>`).join("")}</div>` : `<span class="muted">Nothing on the calendar today.</span>`) : (S.classErr?`<span class="err">${esc(errCopy(S.classErr,"your calendar"))}</span>`:`<span class="muted">Loading…</span>`)}</div>`;
+  const pr = practiceMap()[today];
+  h += `<div class="row"><span class="lab">Practice<br><span class="small muted">${esc(p.phase)}</span></span><div class="list">${p.tasks.map(t=>`<span class="item" style="font-size:16px">${esc(t)}</span>`).join("")}
+      <a href="${READER}" class="small" style="margin-top:4px">Open the sight-reading trainer</a>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <label for="p-min" class="sr">Minutes practised today</label>
+        <input id="p-min" type="number" min="0" max="600" inputmode="numeric" placeholder="min" value="${pr?esc(pr.minutes):""}" style="width:90px">
+        <button id="p-save" class="solid">${pr?"Update":"Log practice"}</button>
+        <span class="small muted">${streakText()}</span></div></div></div>`;
+  h += `<div class="row"><span class="lab">Inbox</span><div class="list">`;
+  h += S.mailErr ? `<span class="err">${esc(errCopy(S.mailErr,"email"))}</span>` : !S.mail ? `<span class="muted">Loading…</span>` : !S.mail.length ? `<span class="muted">Nothing from teachers or school needs you.</span>`
+     : S.mail.map(m => `<div class="item" style="flex-direction:column;gap:0"><span style="font-weight:700">${esc(m.subject)}</span><span class="small muted">${esc(m.from.replace(/<.*>/,"").replace(/@.*/,"").replace(/"/g,"").trim())} · <a href="${esc(m.url)}">open</a></span></div>`).join("");
+  h += `</div></div>`;
+  const open = todos().filter(t => !t.done).slice(0,4);
+  if (open.length) h += `<div class="row"><span class="lab">To-do</span><div class="list">${open.map(t=>`<span class="item">${esc(t.text)}${t.when?`<span class="meta">${esc(t.when)}</span>`:""}</span>`).join("")}</div></div>`;
+  h += `<p class="small muted" style="margin:0">${S.sync ? `Synced with Claude ${esc(new Date(S.sync.updated||S.sync._file.createdTime).toLocaleString([], {weekday:"short", hour:"numeric", minute:"2-digit"}))}` : S.syncErr ? esc(errCopy(S.syncErr,"the Claude sync")) : "Waiting for the first sync from Claude."}${S.inbox.items.length?` · ${S.inbox.items.length} change${S.inbox.items.length>1?"s":""} waiting to sync`:""}</p>`;
+  v.innerHTML = h;
+  v.querySelectorAll("[data-done]").forEach(cb => cb.onchange = () => queue({ type:"assignmentDone", ref:cb.dataset.done, value:cb.checked }));
+  $("p-save").onclick = () => { const m = Math.max(0, Math.min(600, parseInt($("p-min").value,10)||0)); queue({ type:"practice", date:today, minutes:m }); };
+}
+
+// ================= Week =================
+function renderWeek(){
+  const v = $("v-week"), D = doneMap();
+  let h = `<div class="row" style="border-top:0;padding-top:0"><span class="lab">Next 7 days</span><span class="lead">${S.assign?((S.assign||[]).filter(a=>!a.long&&a.due>=today&&a.due<=addDays(today,6)).length+" things due"):"Loading…"}</span></div>`;
+  if (S.assignErr) h += `<div class="err">${esc(errCopy(S.assignErr,"assignments"))}</div>`;
+  for (let i = 0; i < 7; i++){
+    const d = addDays(today,i), due = dueOn(d), cl = (S.classes||[]).filter(c => c.date === d);
+    h += `<div class="row"><span class="lab">${i===0?"Today":i===1?"Tomorrow":dowOf(d)}<br><span class="muted">${d.slice(8)}.${d.slice(5,7)}</span></span><div class="list">`;
+    h += due.length ? due.map(a => `<label class="item"><input type="checkbox" data-done="${esc(a.id)}" ${D[a.id]?"checked":""}><span class="${D[a.id]?"done":""}">${esc(a.title)}</span><span class="meta">${esc(a.cls)}</span></label>`).join("") : `<span class="muted">Nothing due</span>`;
+    if (cl.length) h += `<span class="small muted" style="margin-top:4px">First up ${fmtTime(cl[0].start)} · ${cl.length} on the calendar</span>`;
+    if (d === AUDITION) h += `<span class="item" style="font-weight:700">Berklee audition, Boston</span>`;
+    h += `</div></div>`;
+  }
+  const longs = (S.assign||[]).filter(a => a.long && a.due >= today);
+  if (longs.length) h += `<div class="row"><span class="lab">Ongoing</span><div class="list">${longs.map(a=>`<span class="item">${esc(a.title)}<span class="meta">${esc(a.cls)}</span></span>`).join("")}</div></div>`;
+  v.innerHTML = h;
+  v.querySelectorAll("[data-done]").forEach(cb => cb.onchange = () => queue({ type:"assignmentDone", ref:cb.dataset.done, value:cb.checked }));
+}
+
+// ================= To-do + settings =================
+async function addReminder(text, at){
+  const dueAt = at.length === 16 ? at + ":00" : at.slice(0,19);
+  const start = new Date(dueAt), end = new Date(start.getTime() + 15*60000);
+  let alerted = false;
+  try {
+    await g(`${CAL}/calendars/primary/events`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({
+      summary: "Reminder: " + text, start:{ dateTime:start.toISOString() }, end:{ dateTime:end.toISOString() },
+      reminders:{ useDefault:false, overrides:[{ method:"popup", minutes:15 }] }, transparency:"transparent", description:"Set from Life HQ" }) });
+    alerted = true;
+  } catch(e){}
+  queue({ type:"reminder", text, dueAt, when:whenLabel(dueAt), calendarAlert:alerted });
+  return alerted;
+}
+function renderTodo(){
+  const v = $("v-todo"), T = todos();
+  let h = `<div class="row" style="border-top:0;padding-top:0"><span class="lab">To-do<span class="n">${T.filter(t=>!t.done).length}</span></span>
+    <form id="todo-form" style="display:flex;flex-direction:column;gap:8px"><label for="todo-in" class="sr">New to-do</label><input id="todo-in" type="text" placeholder="Add a to-do or reminder">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label for="todo-at" class="small muted">Remind me at</label><input id="todo-at" type="datetime-local" style="flex:1;min-width:180px"><button class="solid" type="submit">Add</button></div>
+    <span id="todo-status" class="small muted" aria-live="polite"></span></form></div>`;
+  const row = t => `<label class="item"><input type="checkbox" data-todo="${esc(t.id)}" ${t.done?"checked":""}><span class="${t.done?"done":""}">${esc(t.text)}</span>${(t.when||t.reminder)?`<span class="meta">${t.reminder?"Reminder":""}${t.reminder&&t.when?" · ":""}${esc(t.when||"")}</span>`:""}</label>`;
+  h += `<div class="row"><span class="lab">Open</span><div class="list">${T.filter(t=>!t.done).map(row).join("") || `<span class="muted">All clear.</span>`}</div></div>`;
+  const dn = T.filter(t => t.done); if (dn.length) h += `<div class="row"><span class="lab">Done</span><div class="list">${dn.map(row).join("")}</div></div>`;
+  h += `<div class="row"><span class="lab">Settings</span><div class="list">
+      <span class="small muted">Reminders become a Google Calendar alert 15 minutes before, so your phone buzzes on time. Changes sync to Claude at your next brief.</span>
+      <label for="gem-key" class="small" style="margin-top:8px">Gemini API key (for Chat, stays on this phone)</label>
+      <div style="display:flex;gap:8px"><input id="gem-key" type="password" placeholder="Paste key" value="${esc(store.get("gemkey",""))}" style="flex:1"><button id="gem-save">Save</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="resync">Sync now</button><button id="signout">Sign out</button></div></div></div>`;
+  v.innerHTML = h;
+  $("todo-form").onsubmit = async ev => { ev.preventDefault(); const t = $("todo-in").value.trim(), at = $("todo-at").value; if (!t) return; $("todo-in").value = ""; $("todo-at").value = "";
+    if (at) { $("todo-status").textContent = "Setting the alert…"; const ok = await addReminder(t, at); const st = $("todo-status"); if (st) st.textContent = ok ? `Alert set for 15 min before ${whenLabel(at)}.` : "Saved. Couldn't add the calendar alert; Claude will push it after your next brief."; }
+    else queue({ type:"todo", text:t }); };
+  v.querySelectorAll("[data-todo]").forEach(cb => cb.onchange = () => queue({ type:"todoDone", ref:cb.dataset.todo, value:cb.checked }));
+  $("gem-save").onclick = () => { store.set("gemkey", $("gem-key").value.trim()); $("gem-save").textContent = "Saved"; };
+  $("resync").onclick = async () => { $("resync").textContent = "Syncing…"; await pushInbox(); await refresh(); };
+  $("signout").onclick = () => { try { if (token && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(token.access_token, () => {}); } catch(e){} token = null; store.set("token", null); store.set("authed", false); showGate(); };
+}
+
+// ================= Chat (Gemini) =================
+let GEM_MODEL = store.get("gemmodel", "");
+async function pickModel(key){
+  if (GEM_MODEL) return GEM_MODEL;
+  try { const r = await (await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`)).json();
+    const names = (r.models||[]).filter(m => (m.supportedGenerationMethods||[]).includes("generateContent")).map(m => m.name.replace(/^models\//,""));
+    const flash = names.filter(n => /flash/.test(n) && !/lite|preview|exp|image|tts|live|audio/.test(n)).sort().reverse();
+    GEM_MODEL = flash[0] || names.find(n => /flash/.test(n)) || "gemini-2.5-flash";
+  } catch(e){ GEM_MODEL = "gemini-2.5-flash"; }
+  store.set("gemmodel", GEM_MODEL); return GEM_MODEL;
+}
+function systemText(){
+  const todays = (S.classes||[]).filter(c=>c.date===today).map(c=>`${fmtTime(c.start)} ${c.name}${c.room?` (room ${c.room})`:""}`).join("; ") || "none";
+  const due = (S.assign||[]).filter(a=>!a.long && a.due>=today && a.due<=addDays(today,7)).map(a=>`${a.due} ${a.cls}: ${a.title}`).join("\n") || "none loaded";
+  return `You are the assistant inside Life HQ, Benedict's personal app. Reply like a sharp friend: short, plain text, phone-friendly, no markdown symbols. Be honest; say when you don't know.
+You can call functions to read his calendar, assignments and school email, add calendar events, save Gmail DRAFTS (never send), add to-dos, and set reminders (a reminder becomes a phone alert 15 minutes before). When he says "remind me", call set_reminder straight away with an exact time; ask once if he gave none. Times are America/New_York.
+Now: ${new Date().toString()}
+Today's schedule: ${todays}
+Due in the next week:\n${due}
+Berklee audition: Sat 14 Nov 2026, Boston, ${daysLeft} days away. Today's practice (${plan(today).phase}): ${plan(today).tasks.join(" | ")}
+Background on Benedict (synced from Claude):\n${(S.sync && S.sync.about) || "Guitarist at SSSAS in Alexandria, VA, preparing a Berklee audition with a cut-down Althea (Dead & Company) over a backing track; learning to read notation."}`;
+}
+const FN = [
+  { name:"get_schedule", description:"Calendar events (classes etc.) for a date YYYY-MM-DD.", parameters:{ type:"OBJECT", properties:{ date:{ type:"STRING" } }, required:["date"] } },
+  { name:"get_assignments", description:"Assignments due between two dates inclusive (YYYY-MM-DD).", parameters:{ type:"OBJECT", properties:{ from:{ type:"STRING" }, to:{ type:"STRING" } }, required:["from","to"] } },
+  { name:"search_email", description:"Search his school Gmail with Gmail query syntax. Returns up to 8 threads.", parameters:{ type:"OBJECT", properties:{ query:{ type:"STRING" } }, required:["query"] } },
+  { name:"add_calendar_event", description:"Add an event to his Google Calendar. start/end local ISO like 2026-10-27T18:30:00.", parameters:{ type:"OBJECT", properties:{ summary:{ type:"STRING" }, start:{ type:"STRING" }, end:{ type:"STRING" } }, required:["summary","start","end"] } },
+  { name:"save_email_draft", description:"Save (never send) a Gmail draft.", parameters:{ type:"OBJECT", properties:{ to:{ type:"STRING" }, subject:{ type:"STRING" }, body:{ type:"STRING" } }, required:["subject","body"] } },
+  { name:"add_todo", description:"Add a to-do to Life HQ.", parameters:{ type:"OBJECT", properties:{ text:{ type:"STRING" } }, required:["text"] } },
+  { name:"set_reminder", description:"Set a reminder; his phone alerts 15 minutes before. at = local ISO like 2026-10-27T16:00:00.", parameters:{ type:"OBJECT", properties:{ text:{ type:"STRING" }, at:{ type:"STRING" } }, required:["text","at"] } },
+];
+let chips = [];
+async function runFn(name, a){
+  if (name === "get_schedule"){ const d = String(a.date||today); return (await listEvents(CAL_CLASSES, d, addDays(d,1))).filter(e=>e.start&&e.start.dateTime).map(e=>({ time:fmtTime(new Date(e.start.dateTime)), what:short(e.summary), room:(e.location||"").split(" - ")[0] })); }
+  if (name === "get_assignments"){ if (!S.assign) await loadAssign(); return (S.assign||[]).filter(x=>!x.long && x.due>=String(a.from) && x.due<=String(a.to)).map(x=>({ due:x.due, class:x.cls, title:x.title, done:!!doneMap()[x.id] })); }
+  if (name === "search_email"){ return (await gmailSearch(String(a.query), 8)).map(m=>({ from:m.from, subject:m.subject, snippet:m.snippet, date:m.date })); }
+  if (name === "add_calendar_event"){ await g(`${CAL}/calendars/primary/events`, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ summary:String(a.summary), start:{ dateTime:new Date(String(a.start)).toISOString() }, end:{ dateTime:new Date(String(a.end)).toISOString() } }) }); chips.push("Added to calendar: "+a.summary); return { ok:true }; }
+  if (name === "save_email_draft"){
+    const raw = `To: ${String(a.to||"")}\r\nSubject: ${String(a.subject)}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${String(a.body)}`;
+    const b64 = btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    await g(`${GM}/drafts`, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ message:{ raw:b64 } }) }); chips.push("Draft saved: "+a.subject); return { saved:true, sent:false }; }
+  if (name === "add_todo"){ queue({ type:"todo", text:String(a.text) }); chips.push("To-do added: "+a.text); return { ok:true }; }
+  if (name === "set_reminder"){ const ok = await addReminder(String(a.text), String(a.at)); chips.push(`Reminder: ${a.text} · ${whenLabel(String(a.at))}`); return { ok:true, phoneAlert:ok }; }
+  throw new Error("unknown function");
+}
+async function send(){
+  const box = $("chat-in"), text = box.value.trim(); if (!text || S.busy) return;
+  const key = store.get("gemkey",""); if (!key){ S.chat.push({ role:"user", content:text }, { role:"model", content:"Add your Gemini API key in To-do → Settings first, then try again." }); box.value=""; renderChat(); return; }
+  S.busy = true; box.value = ""; chips = []; S.chat.push({ role:"user", content:text }); renderChat();
+  $("chat-live").innerHTML = `<div class="msg ai">Thinking…</div>`; window.scrollTo(0, document.body.scrollHeight);
+  const model = await pickModel(key);
+  const contents = S.chat.slice(-24).map(t => ({ role: t.role === "user" ? "user" : "model", parts:[{ text:t.content }] }));
+  let out = "";
+  try {
+    for (let round = 0; round < 6; round++){
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, { method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ systemInstruction:{ parts:[{ text:systemText() }] }, contents, tools:[{ functionDeclarations:FN }], generationConfig:{ temperature:0.7, maxOutputTokens:900 } }) });
+      if (r.status === 429) { out = "Gemini's free limit is used up for now. Try again in a minute."; break; }
+      const data = await r.json(); if (!r.ok) { out = "Chat error: " + ((data.error && data.error.message) || r.status); break; }
+      const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+      const calls = parts.filter(p => p.functionCall);
+      if (!calls.length) { out = parts.map(p => p.text || "").join("").trim() || "…"; break; }
+      contents.push({ role:"model", parts });
+      const responses = [];
+      for (const c of calls) { let res; try { res = await runFn(c.functionCall.name, c.functionCall.args || {}); } catch(e){ res = { error: (e && (e.message || e.code)) || "failed" }; } responses.push({ functionResponse:{ name:c.functionCall.name, response:{ result:res } } }); }
+      contents.push({ role:"user", parts:responses });
+    }
+  } catch(e){ out = "Couldn't reach the chat. Check your connection."; }
+  S.chat.push({ role:"model", content:out || "…", chips:chips.slice() }); S.chat = S.chat.slice(-40); store.set("chat", S.chat);
+  S.busy = false; renderChat(); window.scrollTo(0, document.body.scrollHeight);
+}
+function renderChat(){
+  const v = $("v-chat"); let h = `<div class="chat">`;
+  if (!S.chat.length) h += `<p class="muted" style="margin:0">Ask anything. I can see your classes, assignments and school email, add things to your calendar, save email drafts (never send), set reminders and add to-dos.</p>
+     <div class="suggest">${["What's due this week?","Plan my evening around homework and practice","What do I need to reply to?","Remind me to book Boston travel tomorrow at 4pm"].map(s=>`<button data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+  for (const t of S.chat){ if (t.role === "user") h += `<div class="msg me">${esc(t.content)}</div>`; else { (t.chips||[]).forEach(c => h += `<span class="chip">${esc(c)}</span>`); h += `<div class="msg ai">${esc(t.content)}</div>`; } }
+  h += `<div id="chat-live"></div></div>`;
+  h += S.chat.length ? `<button id="chat-clear" style="align-self:flex-start;margin-bottom:70px">Clear chat</button>` : `<div style="height:70px"></div>`;
+  v.innerHTML = h;
+  v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { $("chat-in").value = b.dataset.s; send(); });
+  const c = $("chat-clear"); if (c) c.onclick = () => { S.chat = []; store.set("chat", []); renderChat(); };
+}
+
+// ================= first-open brief =================
+function maybeShowOverlay(){
+  if (store.get("seen-"+today, false)) return;
+  const o = $("overlay");
+  o.innerHTML = `<div class="in"><span class="small" style="opacity:.75">${esc(dowOf(today))} ${today.slice(8)}.${today.slice(5,7)} · morning brief</span><h1>Morning, Benedict.</h1><div class="text">${esc(syncBrief("morning") || composeBrief())}</div><button id="ov-go">Start the day</button></div>`;
+  o.hidden = false; $("ov-go").onclick = () => { store.set("seen-"+today, true); o.hidden = true; };
+}
+
+// ================= shell =================
+const VIEWS = ["today","week","chat","todo"];
+function setTab(name){
+  VIEWS.forEach(v => { $("v-"+v).hidden = v !== name; $("t-"+v).setAttribute("aria-selected", v === name); });
+  $("composer").hidden = name !== "chat"; store.set("tab", name); window.scrollTo(0,0);
+  if (name === "chat") { renderChat(); window.scrollTo(0, document.body.scrollHeight); }
+}
+VIEWS.forEach(v => $("t-"+v).onclick = () => setTab(v));
+$("chat-send").onclick = send;
+$("chat-in").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+function renderAll(){ renderToday(); renderWeek(); renderTodo(); if (!$("v-chat").hidden) renderChat(); }
+function renderMast(){ $("m-date").innerHTML = `${today.slice(8)}.${today.slice(5,7)}<br>${dowOf(today)}`; $("m-count").innerHTML = daysLeft > 0 ? `Berklee<br>−${daysLeft} days` : daysLeft === 0 ? "Berklee<br>today" : "Life HQ"; }
+function showGate(msg){
+  VIEWS.forEach(v => $("v-"+v).hidden = true); $("tabs").hidden = true; $("composer").hidden = true;
+  const v = $("v-gate"); v.hidden = false;
+  v.innerHTML = `<div class="gate"><h2>Life HQ</h2><p class="muted" style="margin:0">${esc(msg || "Sign in with your school Google account to load your classes, assignments and email.")}</p>
+    <button class="solid" id="go-signin" style="align-self:flex-start;padding:14px 22px;font-size:17px">Sign in with Google</button>
+    ${CLIENT_ID.startsWith("PASTE") ? `<p class="err">This copy isn't set up yet: the Google Client ID is missing.</p>` : ""}</div>`;
+  $("go-signin").onclick = async () => { const ok = await signIn(false); if (ok) start(); else showGate("Sign-in didn't finish. If Google said the app is blocked, your school may not allow it."); };
+}
+function hideGate(){ $("v-gate").hidden = true; $("tabs").hidden = false; setTab(VIEWS.includes(store.get("tab","today")) ? store.get("tab","today") : "today"); }
+async function refresh(){ await Promise.all([loadClasses(), loadAssign(), loadMail(), loadSync()]); renderAll(); }
+async function start(){
+  hideGate(); renderAll();
+  await refresh();
+  if (S.classErr && S.classErr.code === "auth") { const ok = await signIn(true); if (ok) await refresh(); else return showGate("Your Google sign-in expired. Sign in again to continue."); }
+  maybeShowOverlay();
+  if (S.inbox.items.length) pushInbox();
+}
+renderMast();
+document.addEventListener("visibilitychange", async () => { if (document.hidden) return; if (ymd(new Date()) !== today) return location.reload(); if (!tokenValid() && store.get("authed",false)) { const ok = await signIn(true); if (!ok) return; } if (tokenValid()) refresh(); });
+(function boot(){
+  if (tokenValid()) return start();
+  if (store.get("authed", false)) {
+    const wait = () => window.google && google.accounts ? signIn(true).then(ok => ok ? start() : showGate("Tap to sign in again.")) : setTimeout(wait, 150);
+    return wait();
+  }
+  showGate();
+})();
+})();
+</script>
+</body>
+</html>

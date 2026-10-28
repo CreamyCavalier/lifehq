@@ -132,6 +132,8 @@ const SCOPES = [
 ].join(" ");
 const INBOX_NAME = "Life HQ inbox";               // Google Doc the app writes; Claude reads it
 const SYNC_PREFIX = "lifehq-sync-";               // JSON files Claude writes; app reads newest
+const TOMO_OUT = "Life HQ for Tomo";              // Google Doc the app writes; Tomo reads it through its Drive connection
+const TOMO_IN  = "Tomo to Life HQ";               // Google Doc Tomo writes; app turns new lines into inbox items for Claude
 
 // ================= helpers =================
 const $ = id => document.getElementById(id);
@@ -173,7 +175,7 @@ function plan(d){
 }
 
 // ================= state =================
-const S = { classes:null, classErr:null, assign:null, assignErr:null, mail:null, mailErr:null, sync:null, syncErr:null,
+const S = { classes:null, classErr:null, assign:null, assignErr:null, mail:null, mailErr:null, sync:null, syncErr:null, tomoErr:null,
   inbox: store.get("inbox", { items: [] }), chat: store.get("chat", []), busy:false };
 let token = store.get("token", null);
 
@@ -256,18 +258,81 @@ async function loadSync(){
 // inbox: a Google Doc this app owns; Claude reads it at each brief
 let inboxTimer = null;
 function queue(item){ item.id = item.id || uid(); item.at = new Date().toISOString(); S.inbox.items.push(item); store.set("inbox", S.inbox); clearTimeout(inboxTimer); inboxTimer = setTimeout(pushInbox, 1500); renderAll(); }
-async function pushInbox(){
-  if (!tokenValid()) return;
-  const body = "LIFE HQ INBOX (written by the Life HQ home-screen app). JSON:\n" + JSON.stringify({ updated:new Date().toISOString(), items:S.inbox.items });
-  const meta = { name: INBOX_NAME, mimeType: "application/vnd.google-apps.document" };
+// writes plain text into a Google Doc this app owns; the doc id is remembered under idKey
+async function writeDoc(name, body, idKey){
+  const meta = { name, mimeType: "application/vnd.google-apps.document" };
   const boundary = "lhq" + uid();
   const multipart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n${body}\r\n--${boundary}--`;
   try {
-    let id = store.get("inboxId", null);
+    const id = store.get(idKey, null);
     if (id) await g(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`, { method:"PATCH", headers:{ "Content-Type":`multipart/related; boundary=${boundary}` }, body:multipart });
-    else { const r = await g(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`, { method:"POST", headers:{ "Content-Type":`multipart/related; boundary=${boundary}` }, body:multipart }); store.set("inboxId", r.id); }
-    store.set("inboxPushed", Date.now());
-  } catch(e){ if (e && e.status === 404) { store.set("inboxId", null); } }
+    else { const r = await g(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`, { method:"POST", headers:{ "Content-Type":`multipart/related; boundary=${boundary}` }, body:multipart }); store.set(idKey, r.id); }
+    return true;
+  } catch(e){ if (e && e.status === 404) { store.set(idKey, null); } return false; }
+}
+async function pushInbox(){
+  if (!tokenValid()) return;
+  const body = "LIFE HQ INBOX (written by the Life HQ home-screen app). JSON:\n" + JSON.stringify({ updated:new Date().toISOString(), items:S.inbox.items });
+  if (await writeDoc(INBOX_NAME, body, "inboxId")) store.set("inboxPushed", Date.now());
+}
+
+// ================= Tomo bridge =================
+// Tomo has no public API, but it reads and writes Google Drive. Life HQ writes a plain-English
+// snapshot for Tomo, and reads a doc Tomo appends to. New lines there join the inbox, so Claude
+// sees them at the next brief like anything else added on this phone.
+const tomoOn = () => store.get("tomo", false);
+function tomoSnapshot(){
+  const L = [`LIFE HQ FOR TOMO`, `Benedict's schedule, homework and practice, kept current by the Life HQ app. Read-only: to change anything, write in the Google Doc "${TOMO_IN}".`, ""];
+  L.push(`TODAY (${dowOf(today)} ${today})`, syncBrief("morning") || composeBrief(), "");
+  L.push("DUE IN THE NEXT 7 DAYS");
+  const D = doneMap(), up = (S.assign||[]).filter(a => !a.long && a.due >= today && a.due <= addDays(today,6));
+  L.push(up.length ? up.map(a => `- ${a.due} ${a.cls}: ${a.title}${D[a.id]?" (done)":""}`).join("\n") : "- nothing due"); L.push("");
+  L.push("OPEN TO-DOS"); const T = todos().filter(t => !t.done);
+  L.push(T.length ? T.map(t => `- ${t.text}${t.when?` (${t.when})`:""}`).join("\n") : "- none"); L.push("");
+  L.push("PRACTICE", `${streakText()}. Berklee audition ${AUDITION}${daysLeft >= 0 ? `, ${daysLeft} days away` : ""}.`, "");
+  L.push(`HOW TO SEND THINGS BACK`, `Add one line per item to the Google Doc "${TOMO_IN}":`,
+    `todo: <text>`, `remind: <text> @ YYYY-MM-DD HH:MM   (becomes a phone alert 15 min before, New York time)`,
+    `done: <exact to-do text>`, `practice: <minutes>   (logs today's practice)`, `note: <anything Claude should know>`,
+    `Life HQ picks up each new line once, the next time it opens.`);
+  return L.join("\n");
+}
+const TOMO_IN_TEMPLATE = `# Tomo to Life HQ. Tomo: add one line per item, below these comment lines.
+# todo: <text>
+# remind: <text> @ YYYY-MM-DD HH:MM
+# done: <exact to-do text>
+# practice: <minutes>
+# note: <anything Claude should know>
+`;
+async function readTomo(){
+  let f = null;
+  try { const r = await g(`${DRV}/files?${new URLSearchParams({ q:`name = '${TOMO_IN}' and mimeType = 'application/vnd.google-apps.document' and trashed = false`, orderBy:"modifiedTime desc", pageSize:"1", fields:"files(id)" })}`); f = (r.files||[])[0]; }
+  catch(e){ return S.tomoErr = e; }
+  if (!f) { await writeDoc(TOMO_IN, TOMO_IN_TEMPLATE, "tomoInId"); return; }
+  let txt; try { txt = await g(`${DRV}/files/${f.id}/export?mimeType=text/plain`); } catch(e){ return S.tomoErr = e; }
+  const seen = new Set(store.get("tomoSeen", [])), fresh = [];
+  String(txt).replace(/^\uFEFF/,"").split(/\r?\n/).map(l => l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/,"").trim()).forEach(l => {
+    if (!l || l.startsWith("#") || seen.has(l)) return; seen.add(l); fresh.push(l); });
+  for (const l of fresh){
+    const m = l.match(/^(todo|remind|reminder|done|practice|note)\s*:\s*(.+)$/i), kind = m ? m[1].toLowerCase() : "note", arg = m ? m[2].trim() : l;
+    if (kind === "todo") queue({ type:"todo", text:arg, source:"tomo" });
+    else if (kind === "remind" || kind === "reminder") {
+      const r = arg.match(/^(.*?)\s*@\s*(\d{4}-\d{2}-\d{2})[ T](\d{1,2}:\d{2})$/);
+      if (r && !isNaN(new Date(`${r[2]}T${r[3].padStart(5,"0")}`))) await addReminder(r[1], `${r[2]}T${r[3].padStart(5,"0")}`);
+      else queue({ type:"todo", text:arg, source:"tomo" });
+    }
+    else if (kind === "done") { const t = todos().find(x => !x.done && x.text.toLowerCase() === arg.toLowerCase()); if (t) queue({ type:"todoDone", ref:t.id, value:true, source:"tomo" }); else queue({ type:"note", text:`Tomo says done: ${arg}`, source:"tomo" }); }
+    else if (kind === "practice" && /^\d+/.test(arg)) queue({ type:"practice", date:today, minutes:Math.min(600, parseInt(arg,10)), source:"tomo" });
+    else queue({ type:"note", text:arg, source:"tomo" });
+  }
+  store.set("tomoSeen", [...seen].slice(-500)); S.tomoErr = null;
+}
+async function tomoSync(){
+  if (!tomoOn() || !tokenValid()) return;
+  await readTomo();
+  if (!S.assign || !S.classes) return;   // don't tell Tomo "nothing due" just because a load failed
+  const body = tomoSnapshot();
+  if (body === store.get("tomoLast", "") && store.get("tomoOutId", null)) return;
+  if (await writeDoc(TOMO_OUT, body + `\n\nUpdated ${new Date().toLocaleString()}`, "tomoOutId")) { store.set("tomoLast", body); store.set("tomoPushed", Date.now()); }
 }
 
 // ================= merged views =================
@@ -390,6 +455,9 @@ function renderTodo(){
       <span class="small muted">Reminders become a Google Calendar alert 15 minutes before, so your phone buzzes on time. Changes sync to Claude at your next brief.</span>
       <label for="gem-key" class="small" style="margin-top:8px">Gemini API key (for Chat, stays on this phone)</label>
       <div style="display:flex;gap:8px"><input id="gem-key" type="password" placeholder="Paste key" value="${esc(store.get("gemkey",""))}" style="flex:1"><button id="gem-save">Save</button></div>
+      <span class="small" style="margin-top:8px">Tomo</span>
+      <span class="small muted">${tomoOn() ? `Connected. Life HQ keeps the Google Doc "${esc(TOMO_OUT)}" current and picks up new lines from "${esc(TOMO_IN)}".${store.get("tomoPushed",0) ? ` Last update ${esc(new Date(store.get("tomoPushed",0)).toLocaleString([], {weekday:"short", hour:"numeric", minute:"2-digit"}))}.` : ""}${S.tomoErr ? ` ${esc(errCopy(S.tomoErr,"the Tomo doc"))}` : ""} In Tomo, connect Google Drive, then text it: "Check my Life HQ for Tomo doc whenever I ask about school or practice. To add to-dos or reminders, write them in the Tomo to Life HQ doc."` : "Share your schedule, homework and to-dos with Tomo through Google Drive, and let Tomo add to-dos and reminders here."}</span>
+      <div style="display:flex;gap:8px"><button id="tomo-toggle">${tomoOn() ? "Disconnect Tomo" : "Connect Tomo"}</button></div>
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button id="resync">Sync now</button><button id="signout">Sign out</button></div></div></div>`;
   v.innerHTML = h;
   $("todo-form").onsubmit = async ev => { ev.preventDefault(); const t = $("todo-in").value.trim(), at = $("todo-at").value; if (!t) return; $("todo-in").value = ""; $("todo-at").value = "";
@@ -397,6 +465,7 @@ function renderTodo(){
     else queue({ type:"todo", text:t }); };
   v.querySelectorAll("[data-todo]").forEach(cb => cb.onchange = () => queue({ type:"todoDone", ref:cb.dataset.todo, value:cb.checked }));
   $("gem-save").onclick = () => { store.set("gemkey", $("gem-key").value.trim()); $("gem-save").textContent = "Saved"; };
+  $("tomo-toggle").onclick = async () => { const on = !tomoOn(); store.set("tomo", on); if (on) { $("tomo-toggle").textContent = "Connecting…"; store.set("tomoLast", ""); await tomoSync(); } renderTodo(); };
   $("resync").onclick = async () => { $("resync").textContent = "Syncing…"; await pushInbox(); await refresh(); };
   $("signout").onclick = () => { try { if (token && google.accounts.oauth2.revoke) google.accounts.oauth2.revoke(token.access_token, () => {}); } catch(e){} token = null; store.set("token", null); store.set("authed", false); showGate(); };
 }
@@ -513,7 +582,7 @@ function showGate(msg){
   $("go-signin").onclick = async () => { const ok = await signIn(false); if (ok) start(); else showGate("Sign-in didn't finish. If Google said the app is blocked, your school may not allow it."); };
 }
 function hideGate(){ $("v-gate").hidden = true; $("tabs").hidden = false; setTab(VIEWS.includes(store.get("tab","today")) ? store.get("tab","today") : "today"); }
-async function refresh(){ await Promise.all([loadClasses(), loadAssign(), loadMail(), loadSync()]); renderAll(); }
+async function refresh(){ await Promise.all([loadClasses(), loadAssign(), loadMail(), loadSync()]); await tomoSync(); renderAll(); }
 async function start(){
   hideGate(); renderAll();
   await refresh();
